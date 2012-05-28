@@ -63,6 +63,7 @@ class Float(Integer):
 class Date(Field):
 
     def clean(self, val, doc=None):
+        if val is None: return None # A date field can be None unless it's required
         try:
             if isinstance(val, datetime.datetime): return val
             return datetime.datetime(val)
