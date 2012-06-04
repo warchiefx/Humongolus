@@ -126,6 +126,7 @@ class AutoIncrement(Integer):
 class DynamicDocument(Field):
 
     def clean(self, val, doc=None):
+        if val is None: return None # A DynamicDocument field can be None unless it's required
         if isinstance(val, Document):
             if val._id != None:
                 cls = "%s.%s" % (val.__module__, val.__class__.__name__)
