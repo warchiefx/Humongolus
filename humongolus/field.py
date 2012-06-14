@@ -139,8 +139,13 @@ class DynamicDocument(Field):
     def __call__(self):
         if isinstance(self._value, dict):
             cls = import_class(self._value['cls'])
-            return cls(id=self._value['_id'])
+            return cls.find_one({"_id": self._value['_id']})
+        elif self._value == None:
+            return self._value
         else: raise Exception("Bad Value: %s" % self._value)
+
+    def _get_value(self):
+        return self()
 
 
 class Choice(Char):

@@ -287,6 +287,9 @@ class Field(object):
             self._error = e
     
     def render(self, *args, **kwargs): pass
+
+    def _get_value(self):
+        return self._value
     
     def __repr__(self):
         try:
@@ -491,7 +494,7 @@ class base(dict):
     def __getattribute__(self, key):
         try:
             obj = object.__getattribute__(self, key)
-            if isinstance(obj, Field): return obj._value
+            if isinstance(obj, Field): return obj._get_value()
             else: return obj
         except Exception as e: raise e
 
