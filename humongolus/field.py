@@ -139,9 +139,7 @@ class DynamicDocument(Field):
     def __call__(self):
         if isinstance(self._value, dict):
             cls = import_class(self._value['cls'])
-            if hasattr(self, "__dyninst__") and self.__dyninst__._id == self._value['_id']:
-                return self.__dyninst__
-            else:
+            if not (hasattr(self, "__dyninst__") and self.__dyninst__._id == self._value['_id']):
                 self.__dyninst__ = cls.find_one({"_id": self._value['_id']})
             return self.__dyninst__
         elif self._value == None:
