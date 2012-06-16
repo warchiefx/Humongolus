@@ -34,7 +34,7 @@ class Char(Field):
     _exception_display = "string"
 
     def clean(self, val, doc=None):
-        try:            
+        try:
             val = self._type(val)
             if self._max != None and len(val) > self._max: raise MaxException("must be less than %s" % self._max)
             if self._min != None and len(val) < self._min: raise MinException("must be greater than %s" % self._min)
@@ -93,7 +93,7 @@ class TimeStamp(Date):
     def _save(self, namespace):
         if self._value == None:
             self._value = datetime.datetime.utcnow()
-        
+
         return super(TimeStamp, self)._save(namespace)
 
 class DocumentId(Field):
@@ -101,11 +101,11 @@ class DocumentId(Field):
 
     def clean(self, val, doc=None):
         val = val._id if hasattr(val, '_id') else val
-        if val: 
+        if val:
             v = ObjectId(val)
         else: raise FieldException("value cannot be None")
         return v
-    
+
     def __call__(self):
         if not self._value is None and self._type:
             return self._type(id=self._value)
@@ -120,7 +120,7 @@ class AutoIncrement(Integer):
             col = self._collection if self._collection else "sequence"
             res = self._conn["auto_increment"][col].find_and_modify({"field":self._name}, {"$inc":{"val":1}}, upsert=True, new=True, fields={"val":True})
             self._value = res['val']
-        
+
         return super(AutoIncrement, self)._save(namespace)
 
 class DynamicDocument(Field):
@@ -132,20 +132,29 @@ class DynamicDocument(Field):
                 cls = "%s.%s" % (val.__module__, val.__class__.__name__)
                 return {"cls":cls, "_id":val._id}
             else: raise FieldException("Document does not have an id. Be sure to save first.")
-        elif isinstance(val, dict): 
+        elif isinstance(val, dict):
             return val
         else: raise FieldException("%s is not a valid document type" % val.__class__.__name__)
-    
+
     def __call__(self):
         if isinstance(self._value, dict):
             cls = import_class(self._value['cls'])
-            return cls.find_one({"_id": self._value['_id']})
+            if hasattr(self, "__dyninst__") and self.__dyninst__._id == self._value['_id']:
+                return self.__dyninst__
+            else:
+                self.__dyninst__ = cls.find_one({"_id": self._value['_id']})
+            return self.__dyninst__
         elif self._value == None:
             return self._value
         else: raise Exception("Bad Value: %s" % self._value)
 
     def _get_value(self):
         return self()
+
+    def _save(self, namespace):
+        if hasattr(self, "__dyninst__"):
+            self.__dyninst__.save()
+        return super(DynamicDocument, self)._save(namespace)
 
 
 class Choice(Char):
@@ -190,7 +199,7 @@ class CollectionChoice(Choice):
             cur = cur.sort(self._sort) if self._sort else cur
             return [render(i) for i in cur]
         else: raise FieldException("no render method available")
-        
+
 class Regex(Char):
     _reg = None
     _disp_error = None
@@ -248,8 +257,3 @@ class File(DocumentId):
     def __getattr__(self, key):
         f = GridFS(self._database, collection=self._collection)
         return getattr(f, key)
-
-
-
-
-
