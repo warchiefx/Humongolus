@@ -164,6 +164,17 @@ class DynamicDocument(Field):
             else: return None
 
 
+class DocumentReference(DynamicDocument):
+    _type = None
+
+    def clean(self, val, doc=None):
+        if val is None: return None
+        if self._type:
+            if type(val) != self._type:
+                raise FieldException("%s is not a valid %s" % (type(val), self._type))
+        return super(DocumentReference, self).clean(val, doc)
+
+
 class Choice(Char):
     _choices = []
 
