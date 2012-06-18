@@ -154,6 +154,15 @@ class DynamicDocument(Field):
             self.__dyninst__.save()
         return super(DynamicDocument, self)._save(namespace)
 
+    def _json(self):
+        if hasattr(self, "__dyninst__"):
+            return self.__dyninst__._json()
+        else:
+            val = self._get_value()
+            if val != None:
+                return self()._json()
+            else: return None
+
 
 class Choice(Char):
     _choices = []
