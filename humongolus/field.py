@@ -154,22 +154,13 @@ class DynamicDocument(Field):
             self.__dyninst__.save()
         return super(DynamicDocument, self)._save(namespace)
 
-    def _json(self):
-        if hasattr(self, "__dyninst__"):
-            return self.__dyninst__._json()
-        else:
-            val = self._get_value()
-            if val != None:
-                return self()._json()
-            else: return None
-
 
 class DocumentReference(DynamicDocument):
     _type = None
 
     def clean(self, val, doc=None):
         if val is None: return None
-        if self._type:
+        if self._type and not isinstance(val, dict):
             if type(val) != self._type:
                 raise FieldException("%s is not a valid %s" % (type(val), self._type))
         return super(DocumentReference, self).clean(val, doc)
