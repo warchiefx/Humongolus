@@ -161,6 +161,24 @@ class DocumentReference(DynamicDocument):
     def clean(self, val, doc=None):
         if val is None: return None
         if self._type and not isinstance(val, dict):
+            if type(val) in [str, ObjectId]:
+                try:
+                    # Try to convert val into an ObjectId
+                    if type(val) == ObjectId:
+                        v = val
+                    else:
+                        v = ObjectId(val)
+                    # if it passes:
+                    val = self._type.find_one({"_id": v})
+                    if val != None:
+                        cls = "%s.%s" % (val.__module__, val.__class__.__name__)
+                        return {"cls":cls, "_id":val._id}
+                    else: raise FieldException("%s is not a valid %s" % (type(val), self._type))
+                except FieldException as e:
+                    raise e
+                except:
+                    pass
+
             if type(val) != self._type:
                 raise FieldException("%s is not a valid %s" % (type(val), self._type))
         return super(DocumentReference, self).clean(val, doc)
