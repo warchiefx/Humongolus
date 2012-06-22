@@ -3,6 +3,7 @@ import re
 from humongolus import Field, FieldException, Document, import_class
 from bson.objectid import ObjectId
 from gridfs import GridFS
+import iso8601
 
 class MinException(FieldException): pass
 class MaxException(FieldException): pass
@@ -66,6 +67,7 @@ class Date(Field):
         if val is None: return None # A date field can be None unless it's required
         try:
             if isinstance(val, datetime.datetime): return val
+            if isinstance(val, basestring): return iso8601.parse_date(val)
             return datetime.datetime(val)
         except: raise FieldException("%s: invalid datetime" % val)
 
