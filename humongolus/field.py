@@ -173,7 +173,7 @@ class DocumentReference(DynamicDocument):
                     if val != None:
                         cls = "%s.%s" % (val.__module__, val.__class__.__name__)
                         return {"cls":cls, "_id":val._id}
-                    else: raise FieldException("%s is not a valid %s" % (type(val), self._type))
+                    else: raise FieldException("%s is not a valid %s" % (v, self._type))
                 except FieldException as e:
                     raise e
                 except:
@@ -257,6 +257,7 @@ class File(DocumentId):
     _args = {}
 
     def clean(self, val, doc=None):
+        if val is None: return None # A File field can be None unless it's required
         if not self._database: raise FieldException("database is required")
         if isinstance(val, ObjectId): return val
         try:
