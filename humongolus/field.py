@@ -75,6 +75,7 @@ class Date(Field):
 class Boolean(Field):
     _default = False
     def clean(self, val, doc=None):
+        if val is None: return None # A boolean field can be None unless it's required
         try:
             if isinstance(val, bool): return val
             return bool(val)
