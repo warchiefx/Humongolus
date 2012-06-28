@@ -164,7 +164,7 @@ class DocumentReference(DynamicDocument):
     def clean(self, val, doc=None):
         if val is None: return None
         if self._type and not isinstance(val, dict):
-            if type(val) in [str, ObjectId]:
+            if isinstance(val, basestring) or isinstance(val, ObjectId):
                 try:
                     # Try to convert val into an ObjectId
                     if type(val) == ObjectId:
