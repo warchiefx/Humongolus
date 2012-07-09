@@ -339,8 +339,7 @@ class Lazy(object):
         """
         q = kwargs.get('query', {})
         q.update({self._key:self._base._id})
-        self._query.update(q)
-        return self._type.find(self._query)
+        return self._type.find(q)
 
     def _save(self, *args, **kwargs): pass
     def _errors(self, *args, **kwargs): pass
