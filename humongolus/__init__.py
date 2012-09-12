@@ -41,7 +41,7 @@ def import_class(kls):
     module = ".".join(parts[:-1])
     m = __import__(module)
     for comp in parts[1:]:
-        m = getattr(m, comp)            
+        m = getattr(m, comp)
     return m
 
 class FieldValidator(object):
@@ -68,7 +68,7 @@ class FieldValidator(object):
         """
         return val
 
-class FieldException(Exception): 
+class FieldException(Exception):
     """Exception for field validation errors.
     """
     pass
@@ -87,7 +87,7 @@ class DocumentException(Exception):
         self.errors = errors
 
     def __str__(self):
-        return str(self.errors) 
+        return str(self.errors)
 
 class Attributes(object):
     _id = None
@@ -112,9 +112,9 @@ class Attributes(object):
         for k,v in kwargs.iteritems():
             try:
                 setattr(self, k, v)
-            except Exception as e: 
+            except Exception as e:
                 print e
-    
+
     @property
     def name(self):
         return "%s_%s" % (self.prepend, self._name) if self.prepend else self._name
@@ -172,7 +172,7 @@ class Widget(object):
         return fields
 
     def clean(self, val, doc=None):
-        """Override to apply custom parsing of form data. 
+        """Override to apply custom parsing of form data.
         This is called anytime you set the value of a Field.
         Should always return the "cleaned" value or raise a FieldException on error
 
@@ -181,7 +181,7 @@ class Widget(object):
             - `doc`: a dictionary available if using the Form system. The dictionary will contain all keys passed to the Form object on instantiation
         """
         return val
-    
+
     def render(self, *args, **kwargs):
         """Override to customize output
 
@@ -194,7 +194,7 @@ class Widget(object):
         parts = self.render(*args, **kwargs)
         if isinstance(parts, list):
             return "".join(parts)
-        
+
         return parts
 
 class Field(object):
@@ -209,7 +209,7 @@ class Field(object):
         - `widget`: :class: `~Widget` to use for rendering, also assignable when creating a form, optional
         - `validate`: an instance :class: `~FieldValidator` for custom validation
     """
-    
+
     logger = None
     _name = None
     _conn = None
@@ -226,7 +226,7 @@ class Field(object):
     __args__ = ()
 
     def __init__(self, *args, **kwargs):
-        
+
         self.logger = _settings.LOGGER
         self._conn = _settings.DB_CONNECTION
         self.__kwargs__ = kwargs
@@ -235,7 +235,7 @@ class Field(object):
             try:
                 setattr(self, "_%s" % k, v)
             except: pass
-        
+
         self._dirty = self.clean(self._default, doc=None) if self._default else None
         self._value = self.clean(self._default, doc=None) if self._default else None
         self._error = None
@@ -244,12 +244,12 @@ class Field(object):
         self._error = None
         self._isrequired(val)
         val = self.clean(val, doc=doc)
-        val = self._validate(self).validate(val, doc=doc) if self._validate else val 
+        val = self._validate(self).validate(val, doc=doc) if self._validate else val
         self._dirty = self._value if not dirty else dirty
         self._value = val
-    
-    def clean(self, val, doc=None): 
-        """Override to apply custom parsing of incoming value. 
+
+    def clean(self, val, doc=None):
+        """Override to apply custom parsing of incoming value.
         This is called anytime you set the value of a Field.
         Should always return the "cleaned" value or raise a FieldException on error
 
@@ -258,18 +258,18 @@ class Field(object):
             - `doc`: a dictionary available if using the :class: `~Form` system. The dictionary will contain all keys passed to the :class: `~Form` object on instantiation
         """
         return val
-    
+
     def _isrequired(self, val):
         if val in EMPTY and self._required: raise FieldException("Required Field")
 
     def _json(self):
         return self._value
-    
+
     def _save(self, namespace):
         obj = {}
         if self._value != self._dirty: obj[namespace] = self._value
         return obj
-    
+
     def _errors(self, namespace):
         errors = {}
         try:
@@ -278,19 +278,19 @@ class Field(object):
             self._error = e
         if self._error: errors[namespace] = self._error
         return errors
-    
+
     def _map(self, val, init=False, doc=None):
         try:
             if init: self._clean(val, dirty=val, doc=doc)
             else: self._clean(val, doc=doc)
         except Exception as e:
             self._error = e
-    
+
     def render(self, *args, **kwargs): pass
 
     def _get_value(self):
         return self._value
-    
+
     def __repr__(self):
         try:
             return self._value
@@ -299,7 +299,7 @@ class Field(object):
 
     def __str__(self):
         return str(self._value)
-    
+
     def __unicode__(self):
         return unicode(self._value)
 
@@ -332,7 +332,7 @@ class Lazy(object):
                 setattr(self, "_%s" % k, v)
             except: pass
 
-    
+
     def __call__(self, **kwargs):
         """when calling the lazy object it will return a mongodb cursor that yields models of the type.
         It will use the the _id of the base document and look in the key of the type class
@@ -353,7 +353,7 @@ class Lazy(object):
 
     def __str__(self):
         return str(self.__class__.__name__)
-    
+
     def __unicode__(self):
         return unicode(self.__class__.__name__)
 
@@ -386,7 +386,7 @@ class List(list):
             try:
                 setattr(self, "_%s" % k, v)
             except: pass
-        
+
 
     def append(self, obj):
         types = self._type if self._type is list else [self._type]
@@ -394,8 +394,12 @@ class List(list):
         if obj.__class__ in types:
             super(List, self).append(obj)
         else: raise Exception("%s not of type %s" % (obj.__class__.__name__, self._type.__name__))
-    
+
     def _save(self, namespace):
+        # Delete all before beginning
+        conn = self._parent._coll
+        conn.update({'_id': self._parent._id}, {'$unset': {namespace: 1}}, upsert=False, safe=True)
+
         ret = {}
         for id, obj in enumerate(self):
             ns = ".".join([namespace, str(id)])
@@ -406,9 +410,9 @@ class List(list):
                 ret[ns] = obj
                 print ret
         return ret
-    
+
     def _errors(self, namespace):
-        errors = {}  
+        errors = {}
         for id, obj in enumerate(self):
             ns = ".".join([namespace, str(id)])
             try:
@@ -416,7 +420,7 @@ class List(list):
             except Exception as e: pass
         return errors
 
-           
+
     def _map(self, val, init=False, doc=None):
         for item in val:
             try:
@@ -433,10 +437,10 @@ class List(list):
                 ret.append(obj._json())
             except:
                 ret.append(obj)
-        
+
         return ret
-    
-    def get_choices(self, render=None):        
+
+    def get_choices(self, render=None):
         if render:
             return render(obj=self)
         else: return [i for i in self]
@@ -446,10 +450,10 @@ class List(list):
 
     def __str__(self):
         return str(self.__class__.__name__)
-    
+
     def __unicode__(self):
         return unicode(self.__class__.__name__)
-        
+
 class base(dict):
     logger = None
     _inited = False
@@ -480,16 +484,16 @@ class base(dict):
                     v.__kwargs__['name'] = k
                     v.__kwargs__['parent'] = self
                     self.__dict__[k] = v.__class__(*v.__args__, **v.__kwargs__)
-    
+
     def __setattr__(self, key, val):
         try:
             fi = self.__dict__.get(key, None)
-            fi._clean(val)  
+            fi._clean(val)
         except FieldException as e:
             fi._error = e
         except Exception as e:
             self.__dict__[key] = val
-    
+
     def __getattribute__(self, key):
         try:
             obj = object.__getattribute__(self, key)
@@ -499,19 +503,19 @@ class base(dict):
 
     @classmethod
     def _getbases(cls):
-        b = [cls]        
+        b = [cls]
         for i in cls.__bases__:
             b.append(i)
             try:
                 b.extend(i._getbases())
             except:pass
         return b
-    
+
     def _get(self, key):
         try:
             return self.__dict__[key]
         except:
-            raise AttributeError("%s is an invalid attribute") 
+            raise AttributeError("%s is an invalid attribute")
 
 
     def _save(self, namespace=None):
@@ -521,9 +525,9 @@ class base(dict):
                 key = v._dbkey if v._dbkey else k
                 ns = ".".join([namespace, key]) if namespace else key
                 obj.update(v._save(namespace=ns))
-            except Exception as e: pass 
+            except Exception as e: pass
         return obj
-    
+
     def _errors(self, namespace=None):
         errors = {}
         for k,v in self.__dict__.iteritems():
@@ -548,12 +552,12 @@ class base(dict):
         for k,v in self.__dict__.iteritems():
             try:
                 if not isinstance(v, Lazy):
-                    key = v._dbkey if v._dbkey else k 
+                    key = v._dbkey if v._dbkey else k
                     obj[key] = v._json()
             except: pass
-        
+
         return obj
-    
+
     def render(self): pass
 
     def __repr__(self):
@@ -561,7 +565,7 @@ class base(dict):
 
     def __str__(self):
         return str(self.__class__.__name__)
-    
+
     def __unicode__(self):
         return unicode(self.__class__.__name__)
 
@@ -600,7 +604,7 @@ class Document(base):
         self.__hargskeys__ = set()
         self._conn = _settings.DB_CONNECTION
         self._coll = self._conn[self._db][self._collection]
-        if kwargs.get('id', None): 
+        if kwargs.get('id', None):
             self._id = ObjectId(kwargs['id'])
             self._doc()
     """
@@ -629,15 +633,15 @@ class Document(base):
         """is document active: Boolean
         """
         return self.__active__
-    
+
     @property
-    def created(self): 
+    def created(self):
         """created date of document: datetime
         """
         return self.__created__
 
     @property
-    def modified(self): 
+    def modified(self):
         """return last modify date of document. updated after every successful save: datetime
         """
         return self.__modified__
@@ -654,12 +658,12 @@ class Document(base):
         :Parameters:
             - `*args`: passed directly to Connection.find()
             - `**kwargs`: passed directly to Connection.find()
-        
+
         extra kwargs paramter is as_dict this will return the raw dictionary from mongo, this also allows you to use the "fields" parameter
         """
         if not kwargs.get("as_dict", None): kwargs['as_class'] = cls
         return cls._connection().find(*args, **kwargs)
-    
+
     @classmethod
     def find_one(cls, *args, **kwargs):
         """returns single instantiated Document object of the Class type.
@@ -668,8 +672,8 @@ class Document(base):
             - `**kwargs`: passed directly to Connection.find_one()
         """
         if not kwargs.get("as_dict", None): kwargs['as_class'] = cls
-        return cls._connection().find_one(*args, **kwargs)    
-    
+        return cls._connection().find_one(*args, **kwargs)
+
     @classmethod
     def __ensureindexes__(cls):
         conn = cls._connection()
@@ -678,22 +682,22 @@ class Document(base):
     @classmethod
     def __remove__(cls, *args, **kwargs):
         cls._connection().remove(*args, **kwargs)
-    
+
     @classmethod
     def __update__(cls, *args, **kwargs):
-        cls._connection().update(*args, **kwargs)    
+        cls._connection().update(*args, **kwargs)
 
     def remove(self):
         """Remove document. Calls .remove on pymongo Connection
 
         """
         self.__class__.__remove__({"_id":self._id})
-    
+
     def update(self, update, **kwargs):
         """Update itself. Allows for custom saving, ie; not using safe=True
         """
         self.__class__.__update__({"_id":self._id}, update, **kwargs)
-    
+
 
     def json(self):
         """Return json representation of itself.
@@ -717,7 +721,7 @@ class Document(base):
         """
         errors = self._errors()
         if len(errors.keys()):
-            self.logger.error(errors) 
+            self.logger.error(errors)
             raise DocumentException(errors)
         if not self._id:
             self._save()
@@ -728,7 +732,7 @@ class Document(base):
             obj['__created__'] = self.__created__
             obj['__modified__']= self.__modified__
             obj['__active__'] = self.__active__
-            self._id = self._coll.insert(obj, safe=True)    
+            self._id = self._coll.insert(obj, safe=True)
         else:
             obj = self._save()
             self.__modified__ = datetime.datetime.utcnow()
@@ -754,7 +758,7 @@ class Index(object):
         self._name = name
         for k,v in kwargs.iteritems():
             if hasattr(self, "_%s" % k): setattr(self, "_%s" % k, v)
-    
+
     def create(self, conn):
         if not isinstance(self._key, list): self._key = [self._key]
         conn.ensure_index(self._key, drop_dups=self._drop_dups, background=self._background, unique=self._unique, min=self._min, max=self._max, name=self._name)
@@ -765,7 +769,3 @@ def ensure_indexes():
         _settings.LOGGER.debug("Starting Indexing: %s" % cls.__name__)
         cls.__ensureindexes__()
         _settings.LOGGER.debug("Done Indexing: %s" % cls.__name__)
-
-
-
-
