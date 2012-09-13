@@ -399,6 +399,7 @@ class List(list):
         # Delete all before beginning
         conn = self._parent._coll
         conn.update({'_id': self._parent._id}, {'$unset': {namespace: 1}}, upsert=False, safe=True)
+        conn.update({'_id': self._parent._id}, {'$set': {namespace: []}}, upsert=False, safe=True)
 
         ret = {}
         for id, obj in enumerate(self):
@@ -408,7 +409,7 @@ class List(list):
                 else: ret.update({ns:obj._json()})
             except Exception as e:
                 ret[ns] = obj
-                print ret
+
         return ret
 
     def _errors(self, namespace):
@@ -425,7 +426,10 @@ class List(list):
         for item in val:
             try:
                 obj = self._type()
-                obj._map(item, init=init, doc=None)
+                if type(val) == list:
+                    obj._map(item, init=init, doc=None)
+                elif type(val) == dict:
+                    obj._map(val[item], init=init, doc=None)
                 self.append(obj)
             except:
                 self.append(item)
