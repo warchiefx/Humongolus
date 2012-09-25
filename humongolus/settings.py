@@ -1,2 +1,3 @@
 LOGGER=None
 DB_CONNECTION=None
+DB_NAME=None

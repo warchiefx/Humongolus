@@ -23,7 +23,7 @@ from bson.objectid import ObjectId
 
 EMPTY = ("", " ", None, "None")
 
-def settings(logger, db_connection):
+def settings(logger, db_connection, db_name=None):
     """Set the logger and MongoDB Connection
 
     Apply Model Indexes
@@ -34,6 +34,7 @@ def settings(logger, db_connection):
     """
     _settings.LOGGER = logger
     _settings.DB_CONNECTION = db_connection
+    _settings.DB_NAME = db_name
     ensure_indexes()
 
 def import_class(kls):
@@ -589,7 +590,7 @@ class Document(base):
 
     """
     _id = None
-    _db = None
+    _db = _settings.DB_NAME
     _collection = None
     _conn = None
     _coll = None
