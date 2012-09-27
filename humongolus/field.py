@@ -8,7 +8,7 @@ import iso8601
 class MinException(FieldException): pass
 class MaxException(FieldException): pass
 
-def parse_phone(number):
+def parse_phone(number, append_plus_one=True):
     try:
         phonePattern = re.compile(r'''
                         # don't match beginning of string, number can start anywhere
@@ -23,8 +23,11 @@ def parse_phone(number):
             ''', re.VERBOSE)
         res = phonePattern.search(number).groups()
         st = "".join(res)
-        if st.startswith("1"): return "+%s" % st
-        else: return "+1%s" % st
+        if append_plus_one:
+            if st.startswith("1"): return "+%s" % st
+            else: return "+1%s" % st
+        else:
+            return st
     except Exception as e:
         raise e
 
@@ -247,11 +250,12 @@ class Email(Regex):
     r')@(?:[A-Z0-9-]+\.)+[A-Z]{2,6}$', re.IGNORECASE)  # domain
 
 class Phone(Char):
+    _append_plus_one = True
 
     def clean(self, val, doc=None):
         val = super(Phone, self).clean(val, doc)
         try:
-            return parse_phone(val)
+            return parse_phone(val, self._append_plus_one)
         except: raise FieldException("%s is not a valid format" % val)
 
 class File(DocumentId):
