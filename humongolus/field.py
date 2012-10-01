@@ -81,6 +81,7 @@ class Boolean(Field):
         if val is None: return None # A boolean field can be None unless it's required
         try:
             if isinstance(val, bool): return val
+            elif isinstance(val, basestring): return val not in ['0', 'false', 'False', 'no', 'f', 'n', 'N', 'F']
             return bool(val)
         except: raise FieldException("%s invalid boolean" % val)
 
