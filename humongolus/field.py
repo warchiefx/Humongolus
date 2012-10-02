@@ -1,6 +1,6 @@
 import datetime
 import re
-from humongolus import Field, FieldException, Document, import_class
+from humongolus import Field, FieldException, Document, import_class, _settings
 from bson.objectid import ObjectId
 from gridfs import GridFS
 import iso8601
@@ -125,7 +125,7 @@ class AutoIncrement(Integer):
     def _save(self, namespace):
         if self._value == None:
             col = self._collection if self._collection else "sequence"
-            res = self._conn["auto_increment"][col].find_and_modify({"field":self._name}, {"$inc":{"val":1}}, upsert=True, new=True, fields={"val":True})
+            res = self._conn[_settings.AUTOINC_DB_NAME][col].find_and_modify({"field":self._name}, {"$inc":{"val":1}}, upsert=True, new=True, fields={"val":True})
             self._value = res['val']
 
         return super(AutoIncrement, self)._save(namespace)
